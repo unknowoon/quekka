@@ -76,13 +76,15 @@ static void callback_fn(int fd, uint32_t events, void *user_data) {
         memset(tmpBuffer, 0, sizeof(tmpBuffer));
         int ret = recv(fd, tmpBuffer, sizeof(tmpBuffer) - 1, MSG_DONTWAIT);
         if (ret == 0) {
-            // 상대측에서 연결을 종료했다면,
-            log_info("failed to connect[%d]", ret);
+            // 상대측에서 연결을 종료했다면, 소켓을 닫습니다.
+            // 그리고 epoll 객체에서도, 관심fd로 제거.
+            log_info("disconnected[%d]", ret);
+            epoll_handler_remove(gHandler, fd);
             close( fd );
         }
         else if (ret < 0) {
-            // 상대측 또는 우리가 예상치 못한 소켓 에러 발생시.
-            log_error("erorr[%d]", ret);
+            // 상대측 또는 우리가 예상치 못한 소켓 에러 발생시. 디버깅
+            log_fatal("fatal[%d]", ret);
         }
         else {
             // 데이터 정상 수신
