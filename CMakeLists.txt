@@ -132,7 +132,7 @@ endif()
 # =============================================================================
 if(UNIX AND NOT APPLE)
     add_executable(quekka
-            src/server/quekka.cpp
+        src/server/quekka.cpp
         libsrc/internal/libfile.c
         libsrc/internal/libsocket.c
         include/internal/socket_server.h
@@ -150,6 +150,18 @@ if(UNIX AND NOT APPLE)
         quekka_pub
         quekka_sub
     )
+
+    # =============================================================================
+    # CLI Executable (quekka-cli)
+    # =============================================================================
+    add_executable(quekka-cli
+        src/cli/quekka-cli.cpp
+        libsrc/internal/libsocket.c
+    )
+
+    target_link_libraries(quekka-cli PRIVATE
+        quekka_common
+    )
 endif()
 
 # =============================================================================
@@ -161,7 +173,7 @@ install(TARGETS quekka_common quekka_config quekka_error quekka_pub quekka_sub
 )
 
 if(UNIX AND NOT APPLE)
-    install(TARGETS quekka
+    install(TARGETS quekka quekka-cli
         RUNTIME DESTINATION bin
     )
 
