@@ -8,6 +8,7 @@
 #include <stdint.h>
 
 #include "Quekka_config.h"
+#include "Quekka_message.h"
 
 typedef struct Quekka_producer {
     int _fd;
