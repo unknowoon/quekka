@@ -81,6 +81,18 @@ target_include_directories(quekka_error PUBLIC
 )
 
 # =============================================================================
+# Quekka Serializer Library (직렬화 라이브러리)
+# =============================================================================
+add_library(quekka_protocol STATIC
+    src/quekka/Quekka_protocol.c
+)
+
+target_include_directories(quekka_protocol PUBLIC
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src
+)
+
+# =============================================================================
 # Internal Library (내부 구현)
 # =============================================================================
 add_library(quekka_internal STATIC
@@ -113,6 +125,7 @@ target_link_libraries(quekka_pub PUBLIC
     quekka_config
     quekka_error
     quekka_internal
+	quekka_protocol
 )
 
 # =============================================================================
