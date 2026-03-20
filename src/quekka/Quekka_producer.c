@@ -15,6 +15,7 @@
 #include "quekka/Quekka_config.h"
 #include "quekka/Quekka_log.h"
 #include "quekka/Quekka_quecode.h"
+#include "quekka/Quekka_protocol.h"
 
 
 static _Thread_local Quekka_producer *g_producer = NULL;
@@ -66,35 +67,45 @@ Quekka_producer *Quekka_producer_init(const Quekka_config *config) {
  *
  * @param topic
  * @param payload
- * @param size
+ * @param payload_size
  * @return
  */
-int Quekka_publish(const char *topic, const char *payload, const size_t size) {
+int Quekka_publish(const char *topic, const char *payload, const size_t payload_size) {
 
+	// TODO: payload_size -> payload_size로 변경하는게 어떨지? 
+	// UNINT16_MAX로 topic 길이 체크를 하기 때문에.
+
+	const size_t topic_length = strlen(topic);
     const size_t payload_length = strlen(payload);
 
-    if (strlen(topic) + payload_length != size) {
+    if (topic_length == 0 || topic_length > UINT16_MAX) {
+        Quecode_set_code(QUECODE_FAILURE);
+		return -1;
+    }
+
+    if (payload_length != payload_size) {
         Quecode_set_code(QUECODE_FAILURE);
         return -1;
     }
 
-    if (strlen(topic) > UINT16_MAX) {
-        Quecode_set_code(QUECODE_FAILURE);
-    }
-
-    Quekka_header header;
-    Quekka_message message;
-
+	// 메시지 길이 초과시 분할 
     size_t remaining = payload_length;
     uint16_t seq = 0;
 
-    while (remaining > 0) {
-        const size_t chunk_size = (remaining > QUEKKA_PAYLOAD_MAX) ? QUEKKA_PAYLOAD_MAX : remaining;
-        const uint8_t flag = (remaining <= QUEKKA_PAYLOAD_MAX) ? QUEKKA_FLAG_LAST : QUEKKA_FLAG_MORE;
+    Quekka_header header = {0};
 
-        header_assemble(&header, topic);
-        message_assemble(&header, &message, payload + (seq * QUEKKA_PAYLOAD_MAX), seq, flag);
-        send(g_producer->_fd, &message, sizeof(message), 0);
+	// 헤더 조립
+    header_assemble(header, topic);
+    while (remaining > 0) {
+
+        const size_t chunk_size = (remaining > QUEKKA_PAYLOAD_MAX) ? QUEKKA_PAYLOAD_MAX : remaining;
+        const uint8_t flag = (remaining >= QUEKKA_PAYLOAD_MAX) ? QUEKKA_FLAG_MORE : QUEKKA_FLAG_LAST;
+
+		Quekka_message message = {0};
+
+        message_assemble(header, message, payload + (seq * QUEKKA_PAYLOAD_MAX), seq, flag);
+
+        send(g_producer->_fd, message, sizeof(message), 0);
 
         remaining -= chunk_size;
         seq++;
@@ -110,18 +121,17 @@ int Quekka_publish(const char *topic, const char *payload, const size_t size) {
  * @param flag
  * @return
  */
-static void header_assemble(Quekka_header *header, const char *topic) {
-    // TODO: 유틸 함수 생성 필요
+static void header_assemble(Quekka_header header, const char *topic) {
+    // TODO: 시간 유틸 함수 생성 필요
     // 메시지 아이디 조립: 현재시간으로 포멧맞춰 문자열 생성
     const time_t now = time(NULL);
     const struct tm *t = localtime(&now);
     char msg_id[QUEKKA_MSG_ID_MAX];
     strftime(msg_id, sizeof(msg_id), QUEKKA_MSG_ID_FORMAT, t);
-
-    // 메시지 헤더 조립
-    strncpy(header->topic, topic, sizeof(header->topic));
-    strncpy(header->message_id, msg_id, sizeof(header->message_id));
-    header->topic_len = (uint16_t) strlen(topic);
+	
+	header.topic = topic;
+	header.message_id = msg_id;
+	header.topic_len = (uint16_t) strlen(topic);
 }
 
 /**
@@ -132,17 +142,12 @@ static void header_assemble(Quekka_header *header, const char *topic) {
  * @param seq
  * @param flag
  */
-static void message_assemble(Quekka_header *header, Quekka_message *message, const char *payload, const uint16_t seq, const uint8_t flag) {
+static void message_assemble(Quekka_header header, Quekka_message message, const char *payload, const uint16_t seq, const uint8_t flag) {
 
-    // 페이로드 길이 검증
-    if (strlen(payload) > QUEKKA_PAYLOAD_MAX) {
-        Quecode_set_code(QUECODE_FAILURE);
-    }
+	header.payload_len = (uint16_t) strlen(payload);
+    header.seq = seq;
+    header.flags = flag;
 
-    header->payload_len = (uint16_t) strlen(payload);
-    header->seq = seq;
-    header->flags = flag;
-
-    message->header = header;
+    message.header = header;
     strncpy(message->payload, payload, QUEKKA_PAYLOAD_MAX);
 }
