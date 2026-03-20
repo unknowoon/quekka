@@ -20,8 +20,8 @@
 
 static _Thread_local Quekka_producer *g_producer = NULL;
 
-static void header_assemble(Quekka_header *header, const char *topic);
-static void message_assemble(Quekka_header *header, Quekka_message *message, const char *payload, uint16_t seq, uint8_t flag);
+static void header_assemble(Quekka_header header, const char *topic);
+static void message_assemble(Quekka_header header, Quekka_message message, const char *payload, uint16_t seq, uint8_t flag);
 
 /**
  *
@@ -78,7 +78,7 @@ int Quekka_publish(const char *topic, const char *payload, const size_t payload_
 	const size_t topic_length = strlen(topic);
     const size_t payload_length = strlen(payload);
 
-    if (topic_length == 0 || topic_length > UINT16_MAX) {
+    if (topic_length == 0 || topic_length >= UINT16_MAX) {
         Quecode_set_code(QUECODE_FAILURE);
 		return -1;
     }
@@ -105,7 +105,9 @@ int Quekka_publish(const char *topic, const char *payload, const size_t payload_
 
         message_assemble(header, message, payload + (seq * QUEKKA_PAYLOAD_MAX), seq, flag);
 
-        send(g_producer->_fd, message, sizeof(message), 0);
+		// NOTE: server 를 보고 flag 추가했다. 
+		// epoll handler가 필요하며
+        send(g_producer->_fd, &message, sizeof(message), MSG_DONTWAIT);
 
         remaining -= chunk_size;
         seq++;
@@ -129,8 +131,12 @@ static void header_assemble(Quekka_header header, const char *topic) {
     char msg_id[QUEKKA_MSG_ID_MAX];
     strftime(msg_id, sizeof(msg_id), QUEKKA_MSG_ID_FORMAT, t);
 	
-	header.topic = topic;
-	header.message_id = msg_id;
+	strncpy(header.topic, topic, sizeof(QUEKKA_TOPIC_MAX));
+	header.topic[QUEKKA_TOPIC_MAX-1] = NULL;
+
+	strncpy(header.message_id, msg_id, sizeof(QUEKKA_MSG_ID_MAX));
+	header.message_id[QUEKKA_MSG_ID_MAX-1] = NULL;
+
 	header.topic_len = (uint16_t) strlen(topic);
 }
 
@@ -149,5 +155,5 @@ static void message_assemble(Quekka_header header, Quekka_message message, const
     header.flags = flag;
 
     message.header = header;
-    strncpy(message->payload, payload, QUEKKA_PAYLOAD_MAX);
+    strncpy(message.payload, payload, QUEKKA_PAYLOAD_MAX);
 }

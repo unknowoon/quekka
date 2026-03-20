@@ -30,7 +30,7 @@ typedef struct Quekka_header {
 } Quekka_header;
 
 typedef struct Quekka_message {
-    Quekka_header *header;
+    Quekka_header header;
     char payload[QUEKKA_PAYLOAD_MAX];
 } Quekka_message;
 #pragma pack(pop)

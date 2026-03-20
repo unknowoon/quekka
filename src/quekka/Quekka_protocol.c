@@ -1,5 +1,6 @@
 #include "quekka/Quekka_protocol.h"
 
+#if 0
 int Quekka_serialize(const Quekka_message *message, uint8_t *buf, size_t size) {
 
 	// 길이 검증
@@ -33,3 +34,4 @@ int Quekka_deserialize(const uint8_t *buf, Quekka_message *message, size_t size)
 	return (int) size;
 }
 
+#endif
