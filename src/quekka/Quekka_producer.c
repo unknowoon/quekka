@@ -20,8 +20,8 @@
 
 static _Thread_local Quekka_producer *g_producer = NULL;
 
-static void header_assemble(Quekka_header header, const char *topic);
-static void message_assemble(Quekka_header header, Quekka_message message, const char *payload, uint16_t seq, uint8_t flag);
+static void header_assemble(Quekka_header *header, const char *topic);
+static void message_assemble(Quekka_header *header, Quekka_message *message, const char *payload, uint16_t seq, uint8_t flag);
 
 /**
  *
@@ -95,7 +95,7 @@ int Quekka_publish(const char *topic, const char *payload, const size_t payload_
     Quekka_header header = {0};
 
 	// 헤더 조립
-    header_assemble(header, topic);
+    header_assemble(&header, topic);
     while (remaining > 0) {
 
         const size_t chunk_size = (remaining > QUEKKA_PAYLOAD_MAX) ? QUEKKA_PAYLOAD_MAX : remaining;
@@ -103,7 +103,7 @@ int Quekka_publish(const char *topic, const char *payload, const size_t payload_
 
 		Quekka_message message = {0};
 
-        message_assemble(header, message, payload + (seq * QUEKKA_PAYLOAD_MAX), seq, flag);
+        message_assemble(&header, &message, payload + (seq * QUEKKA_PAYLOAD_MAX), seq, flag);
 
 		// NOTE: server 를 보고 flag 추가했다. 
 		// epoll handler가 필요하며
@@ -123,7 +123,7 @@ int Quekka_publish(const char *topic, const char *payload, const size_t payload_
  * @param flag
  * @return
  */
-static void header_assemble(Quekka_header header, const char *topic) {
+static void header_assemble(Quekka_header *header, const char *topic) {
     // TODO: 시간 유틸 함수 생성 필요
     // 메시지 아이디 조립: 현재시간으로 포멧맞춰 문자열 생성
     const time_t now = time(NULL);
@@ -131,13 +131,13 @@ static void header_assemble(Quekka_header header, const char *topic) {
     char msg_id[QUEKKA_MSG_ID_MAX];
     strftime(msg_id, sizeof(msg_id), QUEKKA_MSG_ID_FORMAT, t);
 	
-	strncpy(header.topic, topic, sizeof(QUEKKA_TOPIC_MAX));
-	header.topic[QUEKKA_TOPIC_MAX-1] = NULL;
+	strncpy(header->topic, topic, sizeof(QUEKKA_TOPIC_MAX-1));
+	header->topic[QUEKKA_TOPIC_MAX-1] = '\0';
 
-	strncpy(header.message_id, msg_id, sizeof(QUEKKA_MSG_ID_MAX));
-	header.message_id[QUEKKA_MSG_ID_MAX-1] = NULL;
+	strncpy(header->message_id, msg_id, sizeof(QUEKKA_MSG_ID_MAX-1));
+	header->message_id[QUEKKA_MSG_ID_MAX-1] = '\0';
 
-	header.topic_len = (uint16_t) strlen(topic);
+	header->topic_len = (uint16_t) strlen(topic);
 }
 
 /**
@@ -148,12 +148,14 @@ static void header_assemble(Quekka_header header, const char *topic) {
  * @param seq
  * @param flag
  */
-static void message_assemble(Quekka_header header, Quekka_message message, const char *payload, const uint16_t seq, const uint8_t flag) {
+static void message_assemble(Quekka_header *header, Quekka_message *message, const char *payload, const uint16_t seq, const uint8_t flag) {
 
-	header.payload_len = (uint16_t) strlen(payload);
-    header.seq = seq;
-    header.flags = flag;
+	header->payload_len = (uint16_t) strlen(payload);
+    header->seq = seq;
+    header->flags = flag;
 
-    message.header = header;
-    strncpy(message.payload, payload, QUEKKA_PAYLOAD_MAX);
+    memcpy(&message->header, header, QUEKKA_HEADER_SIZE-1);
+
+    strncpy(message->payload, payload, QUEKKA_PAYLOAD_MAX-1);
+	message->payload[QUEKKA_PAYLOAD_MAX-1] = '\0';
 }
