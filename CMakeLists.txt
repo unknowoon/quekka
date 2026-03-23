@@ -125,7 +125,6 @@ target_link_libraries(quekka_pub PUBLIC
     quekka_config
     quekka_error
     quekka_internal
-	quekka_protocol
 )
 
 # =============================================================================
