@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-static void callback_fn(int fd, uint32_t events, void *user_data) {
+static void callback_fn(void *ptr, uint32_t events, void *user_data) {
     log_info("FD [%d]에 이벤트가 발생 하였습니다. events[%d]", fd, events);
 
     // 연결 요청이라면, accept 처리하여, 생성된 fd를 다시, epoll add 한다

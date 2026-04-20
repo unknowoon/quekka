@@ -13,7 +13,7 @@ extern "C" {
 typedef struct epoll_handler_t epoll_handler_t;
 
 // 이벤트 콜백 타입
-typedef void (*epoll_event_callback_fn)(int fd, uint32_t events, void *user_data);
+typedef void (*epoll_event_callback_fn)(void *ptr, uint32_t events, void *user_data);
 
 // epoll 핸들러 생성
 epoll_handler_t* epoll_handler_create(void);
@@ -22,7 +22,7 @@ epoll_handler_t* epoll_handler_create(void);
 void epoll_handler_destroy(epoll_handler_t *handler);
 
 // fd 추가 (Edge-triggered)
-int epoll_handler_add(epoll_handler_t *handler, int fd, uint32_t events);
+int epoll_handler_add(epoll_handler_t *handler, int fd, void *ptr, uint32_t events);
 
 // fd 삭제
 int epoll_handler_remove(epoll_handler_t *handler, int fd);
