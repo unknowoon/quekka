@@ -315,7 +315,7 @@ static void handle_accept(const socket_server_t *server) {
 		}
 
 		// epoll에 추가
-		if (epoll_handler_add(server->epoll, client_fd, EPOLLIN | EPOLLET) == -1) {
+		if (epoll_handler_add(server->epoll, client_fd, NULL/* TODO: CTX연결 */,  EPOLLIN | EPOLLET) == -1) {
 			client_manager_remove(server->client_mgr, client_fd);
 			close(client_fd);
 			continue;
@@ -445,7 +445,7 @@ socket_server_t* socket_server_create(
 	}
 
 	// listen_fd를 epoll에 등록
-	if (epoll_handler_add(server->epoll, server->listen_fd, EPOLLIN | EPOLLET) == -1) {
+	if (epoll_handler_add(server->epoll, server->listen_fd, NULL /*TODO: CTX 적용*/, EPOLLIN | EPOLLET) == -1) {
 		client_manager_destroy(server->client_mgr);
 		epoll_handler_destroy(server->epoll);
 		close(server->listen_fd);
