@@ -97,6 +97,7 @@ target_include_directories(quekka_error PUBLIC
 # =============================================================================
 add_library(quekka_internal STATIC
         src/internal/libsocket.c
+		src/internal/libepoll.c
 )
 
 target_include_directories(quekka_internal PUBLIC

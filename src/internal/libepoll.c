@@ -1,8 +1,12 @@
-#ifndef EPOLL_HANDLER_H
-#define EPOLL_HANDLER_H
-
+#include <stdlib.h>
+#include <stdio.h>
+#include <sys/epoll.h>
+#include <sys/fcntl.h>
 #include <stdint.h>
-#include "libepoll.h"
+
+#include "internal/comm.h"
+#include "internal/libepoll.h"
+#include "internal/server.h"
 
 // handler 구조체 
 struct epoll_handler_t {

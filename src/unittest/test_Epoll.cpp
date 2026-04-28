@@ -47,7 +47,7 @@ TEST_F(EpollHandlerTest, AddAndRemoveFd) {
     ASSERT_EQ(pipe(pipefd), 0);
 
     // epoll에 추가
-    int ret = epoll_handler_add(handler, pipefd[0], EPOLLIN);
+    int ret = epoll_handler_add(handler, pipefd[0], NULL, /* TODO */EPOLLIN);
     EXPECT_EQ(ret, 0);
 
     // epoll에서 제거

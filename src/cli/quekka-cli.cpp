@@ -7,13 +7,15 @@
 #include <string>
 #include <sys/epoll.h>
 
+#include "internal/libepoll.h"
+
 static std::string quekkaBindingIp = "127.0.0.1";
 static int quekkaBindingPort = 9999;
 
 static epoll_handler_t *gpQuekkaHandler;
 
 static int processArgs(int argc, char **argv);
-static void callback_fn(int fd, uint32_t events, void *user_data);
+static void callback_fn(void *ptr, uint32_t events, void *user_data);
 static int processQuekkaData(const char *data);
 
 int main(int argc, char **argv) {
@@ -40,7 +42,7 @@ int main(int argc, char **argv) {
     }
 
     // quekka에 접속 예정된 소켓을 이벤트 핸들러에 미리 등록함
-    epoll_handler_add(gpQuekkaHandler, fd, EPOLLIN);
+    epoll_handler_add(gpQuekkaHandler, fd, NULL/*TODO 나중에 할게여...*/, EPOLLIN);
     epoll_event_callback_fn callback = callback_fn;
 
     // quekka 접속 시도함.
@@ -56,7 +58,8 @@ int main(int argc, char **argv) {
     return 0;
 }
 
-static void callback_fn(int fd, uint32_t events, [[maybe_unused]]void *user_data) {
+static void callback_fn(void *ptr, uint32_t events, [[maybe_unused]]void *user_data) {
+	int fd = 0; // TODO 우선 초기화 함
     log_info("quekka-cli, FD [%d]에 이벤트가 발생 하였습니다. events[%d]", fd, events);
 
     // 데이터 수신처리영역.
