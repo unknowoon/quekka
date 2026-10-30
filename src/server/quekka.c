@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
 	if (server_fd < 0) return EXIT_FAILURE;
 
 	socket_setsockopt_reuseaddr(server_fd);
-	socket_bind_address(quekkaBindingIp, server_fd);
+	socket_bind_address(quekkaBindingPort, server_fd);
 	socket_listen(server_fd);
 
 	gServerFd = server_fd;
@@ -74,5 +74,29 @@ static int processArgs(int argc, char **argv) {
 }
 
 static void callback_fn(void *ptr, uint32_t events, void *user_data) {
-	// later...
+	(void) user_data;
+	connection_t *connection = ptr;
+
+	if (connection == NULL) {
+		return;
+	}
+
+	/* 이번에는 리스닝 소켓의 접속 요청만 처리합니다. */
+	if (connection->fd != gServerFd || !(events & EPOLLIN)) {
+		return;
+	}
+
+	struct sockaddr_in client_addr;
+	int client_fd = tcp_socket_accept(connection->fd, &client_addr);
+
+	if (client_fd < 0) {
+		perror("accept");
+		return;
+	}
+
+	log_info("Client connected: fd=%d", client_fd);
+
+	// 현재는 접속 확인 후 연결을 닫습니다.
+	close(client_fd);
+
 }
